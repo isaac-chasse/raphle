@@ -9,3 +9,13 @@ rust-version = { workspace = true }
 [dependencies]
 csv = "1.3.0"
 tracing = "0.1.40"
+
+[dev-dependencies]
+criterion = "0.5.1"
+dotenvy = "0.15.7"
+tokio = { version = "1.37.0", features = ["full"] }
+
+[[bench]]
+name = "adjacency_parse_benchmark"
+path = "./benches/adjacency_parse_bechmark.rs"
+harness = false

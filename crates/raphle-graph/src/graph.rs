@@ -58,18 +58,18 @@ impl Graph {
         let reader = BufReader::new(file);
 
         let mut rows = ReaderBuilder::new().delimiter(b'\t').from_reader(reader);
-        let mut rec = csv::StringRecord::new();
+        let mut rec = csv::ByteRecord::new();
         let mut row_count = 0;
 
-        while rows.read_record(&mut rec)? {
+        while rows.read_byte_record(&mut rec)? {
             row_count += 1;
 
             if row_count % 100_000 == 0 {
                 info!("Processed {} rows", row_count);
             }
 
-            let source: u32 = rec.get(0).unwrap().parse().unwrap();
-            let target: u32 = rec.get(1).unwrap().parse().unwrap();
+            let source: u32 = std::str::from_utf8(rec.get(0).unwrap()).unwrap().parse().unwrap();
+            let target: u32 = std::str::from_utf8(rec.get(0).unwrap()).unwrap().parse().unwrap();
 
             self.add_edge(source, target);
         }
@@ -79,3 +79,4 @@ impl Graph {
         Ok(())
     }
 }
+

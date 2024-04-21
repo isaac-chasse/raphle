@@ -16,5 +16,4 @@ authors = ["ike"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace.dependencies]
-raphle = { path = "crates/raphle" }
 raphle-graph = { path = "crates/raphle-graph" }
