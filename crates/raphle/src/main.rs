@@ -19,7 +19,7 @@ async fn main() {
 
     // grab benchmark csv
     // SET UP DATA CONNECTION HERE
-    // - Just uses hard-path to benchmark TSV 
+    // - Just uses hard-path to benchmark TSV
     // - Abstract to CLI connection? or offer Env path or S3?
     let mut csv_path =
         std::env::var("BENCHMARK_PATH").expect("Expected benchmark dataset in env var");
@@ -51,4 +51,3 @@ async fn main() {
     .await
     .expect("Failed to spawn task");
 }
-
