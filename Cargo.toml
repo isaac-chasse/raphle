@@ -1,9 +1,9 @@
 [workspace]
 members = ["crates/*"]
-# exclude = [
+exclude = [
 #     "scripts",
-#     "crates/raphle-experiments"
-# ]
+    "crates/raphle-experimental"
+]
 resolver = "2"
 
 
@@ -17,3 +17,4 @@ authors = ["ike"]
 
 [workspace.dependencies]
 raphle-graph = { path = "crates/raphle-graph" }
+raphle-experimental = { path = "crates/raphle-experimental" }

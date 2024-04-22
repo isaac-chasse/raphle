@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use dotenvy::dotenv;
-use raphle_graph::graph;
+use raphle_experimental::rwlocked_graph;
 use std::{sync::{Arc, Mutex}, time::Duration};
 use tracing::{info, warn};
 
@@ -16,7 +16,7 @@ fn adjacency_parse_benchmark(c: &mut Criterion) {
         .parse::<u32>()
         .unwrap();
 
-    let graph = graph::Graph::new(expected_node_count);
+    let graph = rwlocked_graph::RWLockedGraph::new(expected_node_count);
     let graph = Arc::new(Mutex::new(graph));
 
     let graph_clone = graph.clone();
