@@ -13,10 +13,10 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 raphle-experimental = { workspace = true }
 
-[dev-dependencies]
-criterion = "0.5.1"
-
-[[bench]]
-name = "adjacency_parse_benchmark"
-path = "./benches/adjacency_parse_bechmark.rs"
-harness = false
+# [dev-dependencies]
+# criterion = "0.5.1"
+#
+# [[bench]]
+# name = "adjacency_parse_benchmark"
+# path = "./benches/adjacency_parse_bechmark.rs"
+# harness = false
