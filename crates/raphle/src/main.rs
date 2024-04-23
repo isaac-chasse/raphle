@@ -1,9 +1,12 @@
-use axum::{Router, routing::get, Extension};
-use axum_prometheus::{PrometheusMetricLayer, metrics_exporter_prometheus::{PrometheusBuilder, Matcher}, AXUM_HTTP_REQUESTS_DURATION_SECONDS};
+use axum::{routing::get, Extension, Router};
+use axum_prometheus::{
+    metrics_exporter_prometheus::{Matcher, PrometheusBuilder},
+    PrometheusMetricLayer, AXUM_HTTP_REQUESTS_DURATION_SECONDS,
+};
 use dotenvy::dotenv;
+use metrics_process::Collector;
 use std::sync::{Arc, Mutex};
 use tracing::{info, warn};
-use metrics_process::Collector;
 
 // use raphle_graph::graph;
 
@@ -56,7 +59,7 @@ async fn main() {
     .expect("Failed to spawn task");
 
     let state = raphle_handlers::status::GraphState { graph };
-    
+
     let collector = Collector::default();
     collector.describe();
 
@@ -64,10 +67,10 @@ async fn main() {
     // this is the default if you use [`PrometheusMetricLayer:pair`]
     let metric_handle = PrometheusBuilder::new()
         .set_buckets_for_metric(
-            Matcher::Full(AXUM_HTTP_REQUESTS_DURATION_SECONDS.to_string()), 
+            Matcher::Full(AXUM_HTTP_REQUESTS_DURATION_SECONDS.to_string()),
             &[
-                0.00001, 0.00002, 0.00005, 0.0001, 0.0002, 0.0005, 0.001, 0.002, 
-                0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0,
+                0.00001, 0.00002, 0.00005, 0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02,
+                0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0,
             ],
         )
         .unwrap()
@@ -78,7 +81,7 @@ async fn main() {
         .route("/health", get(raphle_handlers::status::health))
         .layer(Extension(state))
         .route(
-            "/metrics", 
+            "/metrics",
             get(|| async move {
                 collector.collect();
                 metric_handle.render()

@@ -1,7 +1,10 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use dotenvy::dotenv;
 use raphle_experimental::rwlocked_graph;
-use std::{sync::{Arc, Mutex}, time::Duration};
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 use tracing::{info, warn};
 
 fn adjacency_parse_benchmark(c: &mut Criterion) {
@@ -34,8 +37,8 @@ fn adjacency_parse_benchmark(c: &mut Criterion) {
     });
 }
 
-criterion_group!{
-    name = benches; 
+criterion_group! {
+    name = benches;
     config = Criterion::default().measurement_time(Duration::from_secs(20));
     targets = adjacency_parse_benchmark
 }

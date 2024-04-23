@@ -1,11 +1,13 @@
 use std::sync::{Arc, Mutex};
 
 use axum::{
+    extract::Query,
     http::StatusCode,
-    response::{IntoResponse, Response}, Extension, extract::Query, Json,
+    response::{IntoResponse, Response},
+    Extension, Json,
 };
-use serde::{Deserialize, Serialize};
 use raphle_experimental::rwlocked_graph;
+use serde::{Deserialize, Serialize};
 use tracing::warn;
 
 /// [`std::sync::Arc`] of an instatiated in-memory graph.
@@ -57,14 +59,14 @@ pub async fn health(
         status: "ok",
         version: "0.1.0",
         node_count: None,
-        edge_count: None, 
+        edge_count: None,
         loaded: *state.graph.lock().unwrap().is_loaded.read().unwrap(),
     };
 
     // if stats are requested, query them from the graph
-    // TODO: implement node and edge counts 
+    // TODO: implement node and edge counts
     if query.stats == "true" {
-        warn!("stats will return 0 until its functionality is implemented!"); 
+        warn!("stats will return 0 until its functionality is implemented!");
         status.node_count = Some(0);
         status.edge_count = Some(0);
     }

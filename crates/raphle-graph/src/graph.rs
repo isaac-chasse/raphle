@@ -68,8 +68,14 @@ impl Graph {
                 info!("Processed {} rows", row_count);
             }
 
-            let source: u32 = std::str::from_utf8(rec.get(0).unwrap()).unwrap().parse().unwrap();
-            let target: u32 = std::str::from_utf8(rec.get(0).unwrap()).unwrap().parse().unwrap();
+            let source: u32 = std::str::from_utf8(rec.get(0).unwrap())
+                .unwrap()
+                .parse()
+                .unwrap();
+            let target: u32 = std::str::from_utf8(rec.get(0).unwrap())
+                .unwrap()
+                .parse()
+                .unwrap();
 
             self.add_edge(source, target);
         }
@@ -79,4 +85,3 @@ impl Graph {
         Ok(())
     }
 }
-
