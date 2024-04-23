@@ -26,13 +26,13 @@ impl RWLockedGraph {
             outgoing_edges: RwLock::new(RoaringBitmap::new()),
             incoming_edges: RwLock::new(RoaringBitmap::new()),
         });
-        source_map.outgoing_edges.write().unwrap().push(target);
+        source_map.outgoing_edges.write().unwrap().insert(target);
 
         let target_map = nodes.entry(target).or_insert_with(|| RWLockedNodeMap {
             outgoing_edges: RwLock::new(RoaringBitmap::new()),
             incoming_edges: RwLock::new(RoaringBitmap::new()),
         });
-        target_map.incoming_edges.write().unwrap().push(source);
+        target_map.incoming_edges.write().unwrap().insert(source);
     }
 
     pub fn load_from_tsv(&mut self, path: &str) -> std::io::Result<()> {
