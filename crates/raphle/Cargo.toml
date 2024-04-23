@@ -8,8 +8,13 @@ rust-version = { workspace = true }
 
 [dependencies]
 raphle-graph = { workspace = true }
+raphle-experimental = { workspace = true }
+raphle-handlers = { workspace = true }
 
 dotenvy = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true}
 tracing-subscriber = { workspace = true }
+axum = { workspace = true }
+metrics-process = "1.3.0"
+axum-prometheus = "0.6.1"
