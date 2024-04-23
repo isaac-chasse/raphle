@@ -10,5 +10,5 @@ authors.workspace = true
 [dependencies]
 raphle-experimental = { workspace = true }
 tracing = { workspace = true }
-axum = { version = "0.7.5", features = ["macros", "query"] }
-serde = { version = "1.0.198", features = ["derive"] }
+axum = { workspace = true }
+serde = { workspace = true }

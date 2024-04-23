@@ -2,7 +2,9 @@ use dotenvy::dotenv;
 use std::sync::{Arc, Mutex};
 use tracing::{info, warn};
 
-use raphle_graph::graph;
+// use raphle_graph::graph;
+
+use raphle_experimental::rwlocked_graph;
 
 #[tokio::main]
 async fn main() {
@@ -35,19 +37,20 @@ async fn main() {
     );
     info!("Starting up!");
 
-    let graph = graph::Graph::new(expected_node_count);
+    let graph = rwlocked_graph::RWLockedGraph::new(expected_node_count);
     let graph = Arc::new(Mutex::new(graph));
 
     let graph_clone = graph.clone();
     let csv_path_clone = csv_path.clone();
 
     tokio::spawn(async move {
-        let mut graph_clone = graph_clone.lock().unwrap();
-        match graph_clone.load_from_tsv(&csv_path_clone) {
+        match graph_clone.lock().unwrap().load_from_tsv(&csv_path_clone) {
             Ok(_) => info!("Loaded graph from CSV"),
             Err(e) => warn!("Failed to load graph from CSV: {}", e),
         }
     })
     .await
     .expect("Failed to spawn task");
+
+
 }

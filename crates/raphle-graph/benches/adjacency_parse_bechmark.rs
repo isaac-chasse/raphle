@@ -25,8 +25,7 @@ fn adjacency_parse_benchmark(c: &mut Criterion) {
     c.bench_function("load_graph", |b| {
         b.iter(|| {
             tokio::runtime::Runtime::new().unwrap().block_on(async {
-                let mut graph_clone = graph_clone.lock().unwrap();
-                match graph_clone.load_from_tsv(&csv_path_clone) {
+                match graph_clone.lock().unwrap().load_from_tsv(&csv_path_clone) {
                     Ok(_) => info!("Loaded graph from CSV"),
                     Err(e) => warn!("Failed to load graph from CSV: {}", e),
                 }

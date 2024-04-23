@@ -8,6 +8,8 @@ rust-version = { workspace = true }
 
 [dependencies]
 raphle-graph = { workspace = true }
+raphle-experimental = { workspace = true }
+raphle-handlers = { workspace = true }
 
 dotenvy = { workspace = true }
 tokio = { workspace = true }
