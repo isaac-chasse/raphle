@@ -22,6 +22,7 @@ impl RWLockedGraph {
         }
     }
 
+    /// Adds an edge between a given source and target node.
     pub fn add_edge(&self, source: u32, target: u32) {
         let mut nodes = self.nodes.write().unwrap();
         let source_map = nodes.entry(source).or_insert_with(|| RWLockedNodeMap {
@@ -37,6 +38,45 @@ impl RWLockedGraph {
         target_map.incoming_edges.write().unwrap().insert(source);
     }
 
+    /// Removes the edge between a given source and target node.
+    pub fn remove_edge(&self, source: u32, target: u32) {
+        let mut nodes = self.nodes.write().unwrap();
+        if let Some(source_map) = nodes.get_mut(&source) {
+            source_map.outgoing_edges.write().unwrap().remove(target);
+        }
+
+        if let Some(target_map) = nodes.get_mut(&target) {
+            target_map.incoming_edges.write().unwrap().remove(source);
+        }
+
+        // TODO
+        // Create a bitmap for updated edges that can be written to disk asynchronously. 
+    }
+
+    /// Returns the incoming_edges for a target node.
+    pub fn get_incoming_edges(&self, target: u32) -> RoaringBitmap {
+        if let Some(node) = self.nodes.read().unwrap().get(&target) {
+            node.incoming_edges.read().unwrap().clone()
+        } else {
+            RoaringBitmap::new()
+        }
+    }
+
+    /// Returns the outgoing_edges for a source node.
+    pub fn get_outgoing_edges(&self, source: u32) -> RoaringBitmap {
+        if let Some(node) = self.nodes.read().unwrap().get(&source) {
+            node.outgoing_edges.read().unwrap().clone()
+        } else {
+            RoaringBitmap::new()
+        }
+    }
+
+    /// Checks if the outgoing_edges of a source node contain a target node.
+    pub fn has_edge(&self, source: u32, target: u32) -> bool {
+        self.get_outgoing_edges(source).contains(target)
+    }
+
+    /// Loads from a TSV file given a path.
     pub fn load_from_tsv(&mut self, path: &str) -> std::io::Result<()> {
         let file = File::open(path)?;
         let reader = BufReader::new(file);
