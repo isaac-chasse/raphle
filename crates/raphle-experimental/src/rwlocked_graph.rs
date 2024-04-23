@@ -10,13 +10,15 @@ pub struct RWLockedNodeMap {
 }
 
 pub struct RWLockedGraph {
-    pub nodes: RwLock<HashMap<u32, RWLockedNodeMap>>,
+    nodes: RwLock<HashMap<u32, RWLockedNodeMap>>,
+    pub is_loaded: RwLock<bool>,
 }
 
 impl RWLockedGraph {
     pub fn new(expected_node_count: u32) -> Self {
         RWLockedGraph {
             nodes: RwLock::new(HashMap::with_capacity(expected_node_count as usize)),
+            is_loaded: RwLock::new(false),
         }
     }
 
@@ -61,7 +63,8 @@ impl RWLockedGraph {
 
             self.add_edge(source, target);
         }
-
+        
+        *self.is_loaded.write().unwrap() = true;
         info!("Loaded graph with {}", row_count); // should be user count
 
         Ok(())
