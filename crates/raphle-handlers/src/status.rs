@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use axum::{
     http::StatusCode,
@@ -9,8 +9,9 @@ use raphle_experimental::rwlocked_graph;
 use tracing::warn;
 
 /// [`std::sync::Arc`] of an instatiated in-memory graph.
+#[derive(Clone)]
 pub struct GraphState {
-    pub graph: Arc<rwlocked_graph::RWLockedGraph>,
+    pub graph: Arc<Mutex<rwlocked_graph::RWLockedGraph>>,
 }
 
 /// Graph-specific errors.
@@ -57,7 +58,7 @@ pub async fn health(
         version: "0.1.0",
         node_count: None,
         edge_count: None, 
-        loaded: *state.graph.is_loaded.read().unwrap(),
+        loaded: *state.graph.lock().unwrap().is_loaded.read().unwrap(),
     };
 
     // if stats are requested, query them from the graph

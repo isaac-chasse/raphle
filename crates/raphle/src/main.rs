@@ -1,6 +1,9 @@
+use axum::{Router, routing::get, Extension};
+use axum_prometheus::{PrometheusMetricLayer, metrics_exporter_prometheus::{PrometheusBuilder, Matcher}, AXUM_HTTP_REQUESTS_DURATION_SECONDS};
 use dotenvy::dotenv;
 use std::sync::{Arc, Mutex};
 use tracing::{info, warn};
+use metrics_process::Collector;
 
 // use raphle_graph::graph;
 
@@ -52,5 +55,41 @@ async fn main() {
     .await
     .expect("Failed to spawn task");
 
+    let state = raphle_handlers::status::GraphState { graph };
+    
+    let collector = Collector::default();
+    collector.describe();
 
+    let metric_layer = PrometheusMetricLayer::new();
+    // this is the default if you use [`PrometheusMetricLayer:pair`]
+    let metric_handle = PrometheusBuilder::new()
+        .set_buckets_for_metric(
+            Matcher::Full(AXUM_HTTP_REQUESTS_DURATION_SECONDS.to_string()), 
+            &[
+                0.00001, 0.00002, 0.00005, 0.0001, 0.0002, 0.0005, 0.001, 0.002, 
+                0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0,
+            ],
+        )
+        .unwrap()
+        .install_recorder()
+        .unwrap();
+
+    let server = Router::new()
+        .route("/health", get(raphle_handlers::status::health))
+        .layer(Extension(state))
+        .route(
+            "/metrics", 
+            get(|| async move {
+                collector.collect();
+                metric_handle.render()
+            }),
+        )
+        .layer(metric_layer);
+
+    println!("Listening on port: {}", port);
+
+    let listen_address = format!("0.0.0.0:{}", port);
+
+    let listener = tokio::net::TcpListener::bind(listen_address).await.unwrap();
+    axum::serve(listener, server).await.unwrap();
 }
