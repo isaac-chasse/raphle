@@ -37,7 +37,7 @@ pub async fn get_outgoing_edges(
     let outgoing = busy_graph.get_outgoing_edges(source.unwrap());
     let targets: Vec<_> = outgoing
         .iter()
-        .map(|n| busy_graph.get_node(n).unwrap().into())
+        .map(|n| busy_graph.get_node(n).unwrap())
         .collect();
 
     Ok(Json(OutgoingEdgeResponse { targets }))
@@ -76,7 +76,7 @@ pub async fn get_incoming_edges(
     let incoming = busy_graph.get_outgoing_edges(target.unwrap());
     let sources: Vec<_> = incoming
         .iter()
-        .map(|n| busy_graph.get_node(n).unwrap().into())
+        .map(|n| busy_graph.get_node(n).unwrap())
         .collect();
 
     Ok(Json(IncomingEdgeResponse { sources }))
