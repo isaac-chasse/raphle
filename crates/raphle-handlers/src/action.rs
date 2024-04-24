@@ -73,7 +73,7 @@ pub async fn get_incoming_edges(
     // I think there is a better way to ensure we don't spam lock the graph
     // I also think we may need to free the busy_graph?
     let busy_graph = state.graph.lock().unwrap();
-    let incoming = busy_graph.get_outgoing_edges(target.unwrap());
+    let incoming = busy_graph.get_incoming_edges(target.unwrap());
     let sources: Vec<_> = incoming
         .iter()
         .map(|n| busy_graph.get_node(n).unwrap())
