@@ -39,7 +39,7 @@ async fn main() {
         .unwrap();
 
     info!(
-        "Memgraph started on port {} with node capacity of {}",
+        "raphle started on port {} with node capacity of {}",
         port, expected_node_count
     );
     info!("Starting up!");
@@ -82,7 +82,7 @@ async fn main() {
         .route("/health", get(raphle_handlers::status::health))
         .route("/has_edge", get(raphle_handlers::action::get_has_edge))
         .route(
-            "/get_outgoing_edges",
+            "/outgoing",
             get(raphle_handlers::action::get_outgoing_edges),
         )
         .layer(Extension(state))

@@ -1,12 +1,12 @@
 use axum::{extract::Query, Extension, Json};
 use serde::{Deserialize, Serialize};
-use tracing::error;
+use tracing::{error, warn, info};
 
 use crate::{Errors, GraphState};
 
 #[derive(Serialize)]
 pub struct OutgoingEdgeResponse {
-    sources: Vec<u32>,
+    targets: Vec<u32>,
 }
 
 #[derive(Deserialize)]
@@ -33,22 +33,25 @@ pub async fn get_outgoing_edges(
 
     let source = state.graph.lock().unwrap().get_node(query.source);
     if source.is_none() {
-        return Ok(Json(OutgoingEdgeResponse { sources: vec![] }));
+        warn!("source not present");
+        return Ok(Json(OutgoingEdgeResponse { targets: vec![] }));
     }
 
-    let sources = state
-        .graph
-        .lock()
-        .unwrap()
-        .get_outgoing_edges(source.unwrap())
+    // This feels very hacky.
+    // I think there is a better way to ensure we don't spam lock the graph 
+    // I also think we may need to free the busy_graph? 
+    let busy_graph = state.graph.lock().unwrap();
+    let outgoing = busy_graph.get_outgoing_edges(source.unwrap());
+    let targets: Vec<_> = outgoing
         .iter()
-        .map(|n| state.graph.lock().unwrap().get_node(n).unwrap())
+        .map(|n| busy_graph.get_node(n).unwrap().into())
         .collect();
-    Ok(Json(OutgoingEdgeResponse { sources }))
+
+    Ok(Json(OutgoingEdgeResponse { targets }))
 }
 
 pub struct IncomingEdgeResponse {
-    targets: Vec<u32>,
+    sources: Vec<u32>,
 }
 
 pub struct IncomingEdgeQuery {
@@ -66,8 +69,8 @@ pub struct HasEdgeResponse {
 
 #[derive(Deserialize)]
 pub struct HasEdgeQuery {
-    source: String,
-    target: String,
+    source: u32,
+    target: u32,
 }
 
 pub async fn get_has_edge(
@@ -91,12 +94,12 @@ pub async fn get_has_edge(
         .graph
         .lock()
         .unwrap()
-        .get_node(query.source.parse::<u32>().unwrap());
+        .get_node(query.source);
     let target = state
         .graph
         .lock()
         .unwrap()
-        .get_node(query.target.parse::<u32>().unwrap());
+        .get_node(query.target);
     if source.is_none() || target.is_none() {
         return Ok(Json(HasEdgeResponse { has_edge: false }));
     }
@@ -106,5 +109,6 @@ pub async fn get_has_edge(
         .lock()
         .unwrap()
         .has_edge(source.unwrap(), target.unwrap());
+    info!("{}", has_edge);
     Ok(Json(HasEdgeResponse { has_edge }))
 }

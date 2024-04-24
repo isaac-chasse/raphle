@@ -4,6 +4,7 @@ use roaring::bitmap::RoaringBitmap;
 use csv::ReaderBuilder;
 use tracing::info;
 
+#[derive(Debug)]
 pub struct RWLockedNodeMap {
     outgoing_edges: RwLock<RoaringBitmap>,
     incoming_edges: RwLock<RoaringBitmap>,
@@ -101,7 +102,7 @@ impl RWLockedGraph {
                 .unwrap()
                 .parse()
                 .unwrap();
-            let target: u32 = std::str::from_utf8(rec.get(0).unwrap())
+            let target: u32 = std::str::from_utf8(rec.get(1).unwrap())
                 .unwrap()
                 .parse()
                 .unwrap();
@@ -110,7 +111,7 @@ impl RWLockedGraph {
         }
         
         *self.is_loaded.write().unwrap() = true;
-        info!("Loaded graph with {}", row_count); // should be user count
+        info!("Loaded graph with {} edges", row_count); // should be user count
 
         Ok(())
     }
