@@ -11,6 +11,7 @@ use tracing::{info, warn};
 // use raphle_graph::graph;
 
 use raphle_experimental::rwlocked_graph;
+use raphle_handlers::GraphState;
 
 #[tokio::main]
 async fn main() {
@@ -58,7 +59,7 @@ async fn main() {
     .await
     .expect("Failed to spawn task");
 
-    let state = raphle_handlers::status::GraphState { graph };
+    let state = GraphState { graph };
 
     let collector = Collector::default();
     collector.describe();
@@ -79,6 +80,7 @@ async fn main() {
 
     let server = Router::new()
         .route("/health", get(raphle_handlers::status::health))
+        .route("/has_edge", get(raphle_handlers::action::get_has_edge))
         .layer(Extension(state))
         .route(
             "/metrics",

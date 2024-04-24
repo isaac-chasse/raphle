@@ -76,6 +76,11 @@ impl RWLockedGraph {
         self.get_outgoing_edges(source).contains(target)
     }
 
+    /// Checks that a node exists.
+    pub fn get_node(&self, source: u32) -> Option<u32> {
+        Some(source).filter(|&s| self.nodes.read().unwrap().contains_key(&s))
+    }
+
     /// Loads from a TSV file given a path.
     pub fn load_from_tsv(&mut self, path: &str) -> std::io::Result<()> {
         let file = File::open(path)?;
