@@ -81,6 +81,10 @@ async fn main() {
     let server = Router::new()
         .route("/health", get(raphle_handlers::status::health))
         .route("/has_edge", get(raphle_handlers::action::get_has_edge))
+        .route(
+            "/get_outgoing_edges",
+            get(raphle_handlers::action::get_outgoing_edges),
+        )
         .layer(Extension(state))
         .route(
             "/metrics",

@@ -1,6 +1,9 @@
-use std::sync::{Arc, Mutex};
-use axum::{response::{Response, IntoResponse}, http::StatusCode};
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
 use raphle_experimental::rwlocked_graph;
+use std::sync::{Arc, Mutex};
 
 /// Covers all actions one can do to the graph.
 pub mod action;

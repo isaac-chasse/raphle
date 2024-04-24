@@ -1,8 +1,4 @@
-use axum::{
-    extract::Query,
-    response::IntoResponse,
-    Extension, Json,
-};
+use axum::{extract::Query, response::IntoResponse, Extension, Json};
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
