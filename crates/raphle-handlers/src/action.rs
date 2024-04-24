@@ -19,14 +19,13 @@ pub async fn get_outgoing_edges(
     Query(query): Query<OutgoingEdgeQuery>,
 ) -> Result<Json<OutgoingEdgeResponse>, Errors> {
     // Return Error if not loaded
-    if !state
+    if !*state
         .graph
         .lock()
         .unwrap()
         .is_loaded
         .read()
         .unwrap()
-        .clone()
     {
         error!("Graph data not yet loaded!");
         return Err(Errors::StillLoading);
@@ -76,14 +75,13 @@ pub async fn get_has_edge(
     Query(query): Query<HasEdgeQuery>,
 ) -> Result<Json<HasEdgeResponse>, Errors> {
     // Return Error if not loaded
-    if !state
+    if !*state
         .graph
         .lock()
         .unwrap()
         .is_loaded
         .read()
         .unwrap()
-        .clone()
     {
         error!("Graph data not yet loaded!");
         return Err(Errors::StillLoading);
