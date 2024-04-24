@@ -4,7 +4,6 @@ use roaring::bitmap::RoaringBitmap;
 use csv::ReaderBuilder;
 use tracing::info;
 
-#[derive(Debug)]
 pub struct RWLockedNodeMap {
     outgoing_edges: RwLock<RoaringBitmap>,
     incoming_edges: RwLock<RoaringBitmap>,

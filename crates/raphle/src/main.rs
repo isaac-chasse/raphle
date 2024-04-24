@@ -85,6 +85,10 @@ async fn main() {
             "/outgoing",
             get(raphle_handlers::action::get_outgoing_edges),
         )
+        .route(
+            "/incoming",
+            get(raphle_handlers::action::get_incoming_edges),
+        )
         .layer(Extension(state))
         .route(
             "/metrics",

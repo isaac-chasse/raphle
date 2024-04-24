@@ -50,16 +50,50 @@ pub async fn get_outgoing_edges(
     Ok(Json(OutgoingEdgeResponse { targets }))
 }
 
+#[derive(Serialize)]
 pub struct IncomingEdgeResponse {
     sources: Vec<u32>,
 }
 
+#[derive(Deserialize)]
 pub struct IncomingEdgeQuery {
     target: u32,
 }
 
-pub async fn get_incoming_edges() {
-    todo!()
+pub async fn get_incoming_edges(
+    state: Extension<GraphState>,
+    Query(query): Query<IncomingEdgeQuery>,
+) -> Result<Json<IncomingEdgeResponse>, Errors> {
+    // Return Error if not loaded
+    if !*state
+        .graph
+        .lock()
+        .unwrap()
+        .is_loaded
+        .read()
+        .unwrap()
+    {
+        error!("Graph data not yet loaded!");
+        return Err(Errors::StillLoading);
+    }
+    
+    let target = state.graph.lock().unwrap().get_node(query.target);
+    if target.is_none() {
+        warn!("source not present");
+        return Ok(Json(IncomingEdgeResponse { sources: vec![] }));
+    }
+
+    // This feels very hacky.
+    // I think there is a better way to ensure we don't spam lock the graph 
+    // I also think we may need to free the busy_graph? 
+    let busy_graph = state.graph.lock().unwrap();
+    let incoming = busy_graph.get_outgoing_edges(target.unwrap());
+    let sources: Vec<_> = incoming
+        .iter()
+        .map(|n| busy_graph.get_node(n).unwrap().into())
+        .collect();
+
+    Ok(Json(IncomingEdgeResponse { sources }))
 }
 
 #[derive(Serialize)]
