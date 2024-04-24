@@ -1,6 +1,6 @@
 use axum::{extract::Query, Extension, Json};
 use serde::{Deserialize, Serialize};
-use tracing::{error, warn, info};
+use tracing::{error, info, warn};
 
 use crate::{Errors, GraphState};
 
@@ -19,14 +19,7 @@ pub async fn get_outgoing_edges(
     Query(query): Query<OutgoingEdgeQuery>,
 ) -> Result<Json<OutgoingEdgeResponse>, Errors> {
     // Return Error if not loaded
-    if !*state
-        .graph
-        .lock()
-        .unwrap()
-        .is_loaded
-        .read()
-        .unwrap()
-    {
+    if !*state.graph.lock().unwrap().is_loaded.read().unwrap() {
         error!("Graph data not yet loaded!");
         return Err(Errors::StillLoading);
     }
@@ -38,8 +31,8 @@ pub async fn get_outgoing_edges(
     }
 
     // This feels very hacky.
-    // I think there is a better way to ensure we don't spam lock the graph 
-    // I also think we may need to free the busy_graph? 
+    // I think there is a better way to ensure we don't spam lock the graph
+    // I also think we may need to free the busy_graph?
     let busy_graph = state.graph.lock().unwrap();
     let outgoing = busy_graph.get_outgoing_edges(source.unwrap());
     let targets: Vec<_> = outgoing
@@ -65,18 +58,11 @@ pub async fn get_incoming_edges(
     Query(query): Query<IncomingEdgeQuery>,
 ) -> Result<Json<IncomingEdgeResponse>, Errors> {
     // Return Error if not loaded
-    if !*state
-        .graph
-        .lock()
-        .unwrap()
-        .is_loaded
-        .read()
-        .unwrap()
-    {
+    if !*state.graph.lock().unwrap().is_loaded.read().unwrap() {
         error!("Graph data not yet loaded!");
         return Err(Errors::StillLoading);
     }
-    
+
     let target = state.graph.lock().unwrap().get_node(query.target);
     if target.is_none() {
         warn!("source not present");
@@ -84,8 +70,8 @@ pub async fn get_incoming_edges(
     }
 
     // This feels very hacky.
-    // I think there is a better way to ensure we don't spam lock the graph 
-    // I also think we may need to free the busy_graph? 
+    // I think there is a better way to ensure we don't spam lock the graph
+    // I also think we may need to free the busy_graph?
     let busy_graph = state.graph.lock().unwrap();
     let incoming = busy_graph.get_outgoing_edges(target.unwrap());
     let sources: Vec<_> = incoming
@@ -112,28 +98,13 @@ pub async fn get_has_edge(
     Query(query): Query<HasEdgeQuery>,
 ) -> Result<Json<HasEdgeResponse>, Errors> {
     // Return Error if not loaded
-    if !*state
-        .graph
-        .lock()
-        .unwrap()
-        .is_loaded
-        .read()
-        .unwrap()
-    {
+    if !*state.graph.lock().unwrap().is_loaded.read().unwrap() {
         error!("Graph data not yet loaded!");
         return Err(Errors::StillLoading);
     }
 
-    let source = state
-        .graph
-        .lock()
-        .unwrap()
-        .get_node(query.source);
-    let target = state
-        .graph
-        .lock()
-        .unwrap()
-        .get_node(query.target);
+    let source = state.graph.lock().unwrap().get_node(query.source);
+    let target = state.graph.lock().unwrap().get_node(query.target);
     if source.is_none() || target.is_none() {
         return Ok(Json(HasEdgeResponse { has_edge: false }));
     }
