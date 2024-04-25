@@ -82,32 +82,59 @@ impl RWLockedGraph {
     }
 
     /// Loads from a TSV file given a path.
-    pub fn load_from_tsv(&mut self, path: &str) -> std::io::Result<()> {
+    pub fn load_from_csv(&mut self, path: &str, delimiter: Option<u8>) -> std::io::Result<()> {
         let file = File::open(path)?;
-        let reader = BufReader::new(file);
+        let mut reader_builder = ReaderBuilder::new();
+           
 
-        let mut rows = ReaderBuilder::new().delimiter(b'\t').from_reader(reader);
-        let mut rec = csv::ByteRecord::new();
+        // sets delimeter if provided
+        let reader_builder = match delimiter {
+            Some(delim) => reader_builder.delimiter(delim),
+            None => &mut reader_builder,
+        };
+
+        let mut rows = reader_builder.has_headers(false).from_reader(BufReader::new(file));
         let mut row_count = 0;
-
-        while rows.read_byte_record(&mut rec)? {
+            
+        for res in rows.records() {
             row_count += 1;
 
             if row_count % 100_000 == 0 {
-                info!("Processed {} rows", row_count);
+                info!("loaded {} rows to raphle instance", row_count);
             }
 
-            let source: u32 = std::str::from_utf8(rec.get(0).unwrap())
+            let rec = res?;
+            
+            let source: u32 = rec.get(0)
                 .unwrap()
-                .parse()
+                .parse::<u32>()
                 .unwrap();
-            let target: u32 = std::str::from_utf8(rec.get(1).unwrap())
+            let target: u32 = rec.get(1)
                 .unwrap()
-                .parse()
+                .parse::<u32>()
                 .unwrap();
 
             self.add_edge(source, target);
         }
+
+        // while rows.read_byte_record(&mut rec)? {
+        //     row_count += 1;
+        //
+        //     if row_count % 100_000 == 0 {
+        //         info!("Processed {} rows", row_count);
+        //     }
+        //
+        //     let source: u32 = std::str::from_utf8(rec.get(0).unwrap())
+        //         .unwrap()
+        //         .parse::<u32>()
+        //         .unwrap();
+        //     let target: u32 = std::str::from_utf8(rec.get(1).unwrap())
+        //         .unwrap()
+        //         .parse::<u32>()
+        //         .unwrap();
+        //
+        //     self.add_edge(source, target);
+        // }
         
         *self.is_loaded.write().unwrap() = true;
         info!("Loaded graph with {} edges", row_count); // should be user count
