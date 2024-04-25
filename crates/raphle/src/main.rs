@@ -11,6 +11,7 @@ use tracing::{info, warn};
 // use raphle_graph::graph;
 
 use raphle_experimental::rwlocked_graph;
+use raphle_handlers::GraphState;
 
 #[tokio::main]
 async fn main() {
@@ -32,13 +33,14 @@ async fn main() {
     let mut csv_path =
         std::env::var("BENCHMARK_PATH").expect("Expected benchmark dataset in env var");
     csv_path = format!("{}{}", project_path, csv_path);
+    info!("{}", csv_path);
     let expected_node_count = std::env::var("EXPECTED_NODE_COUNT")
         .unwrap_or("1000000".to_string())
         .parse::<u32>()
         .unwrap();
 
     info!(
-        "Memgraph started on port {} with node capacity of {}",
+        "raphle started on port {} with node capacity of {}",
         port, expected_node_count
     );
     info!("Starting up!");
@@ -49,8 +51,10 @@ async fn main() {
     let graph_clone = graph.clone();
     let csv_path_clone = csv_path.clone();
 
+    let delim: Option<u8> = Some(b' ');
+
     tokio::spawn(async move {
-        match graph_clone.lock().unwrap().load_from_tsv(&csv_path_clone) {
+        match graph_clone.lock().unwrap().load_from_csv(&csv_path_clone, delim) {
             Ok(_) => info!("Loaded graph from CSV"),
             Err(e) => warn!("Failed to load graph from CSV: {}", e),
         }
@@ -58,7 +62,7 @@ async fn main() {
     .await
     .expect("Failed to spawn task");
 
-    let state = raphle_handlers::status::GraphState { graph };
+    let state = GraphState { graph };
 
     let collector = Collector::default();
     collector.describe();
@@ -79,6 +83,15 @@ async fn main() {
 
     let server = Router::new()
         .route("/health", get(raphle_handlers::status::health))
+        .route("/has_edge", get(raphle_handlers::action::get_has_edge))
+        .route(
+            "/outgoing",
+            get(raphle_handlers::action::get_outgoing_edges),
+        )
+        .route(
+            "/incoming",
+            get(raphle_handlers::action::get_incoming_edges),
+        )
         .layer(Extension(state))
         .route(
             "/metrics",
