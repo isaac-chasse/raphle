@@ -16,3 +16,6 @@ Cargo.lock
 # Don't commit .env files
 .env
 
+# Don't commit large files from the data/benches/
+data/benches/*
+

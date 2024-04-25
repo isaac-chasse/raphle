@@ -31,7 +31,7 @@ async fn main() {
     // - Just uses hard-path to benchmark TSV
     // - Abstract to CLI connection? or offer Env path or S3?
     let mut csv_path =
-        std::env::var("SIMPLE_GRAPH_PATH").expect("Expected benchmark dataset in env var");
+        std::env::var("BENCHMARK_PATH").expect("Expected benchmark dataset in env var");
     csv_path = format!("{}{}", project_path, csv_path);
     info!("{}", csv_path);
     let expected_node_count = std::env::var("EXPECTED_NODE_COUNT")
@@ -51,8 +51,10 @@ async fn main() {
     let graph_clone = graph.clone();
     let csv_path_clone = csv_path.clone();
 
+    let delim: Option<u8> = Some(b' ');
+
     tokio::spawn(async move {
-        match graph_clone.lock().unwrap().load_from_csv(&csv_path_clone, None) {
+        match graph_clone.lock().unwrap().load_from_csv(&csv_path_clone, delim) {
             Ok(_) => info!("Loaded graph from CSV"),
             Err(e) => warn!("Failed to load graph from CSV: {}", e),
         }
