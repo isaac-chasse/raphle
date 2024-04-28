@@ -14,7 +14,7 @@ pub mod status;
 /// [`std::sync::Arc`] of an instatiated in-memory graph.
 #[derive(Clone)]
 pub struct GraphState {
-    pub graph: Arc<Mutex<rwlocked_graph::RWLockedGraph>>,
+    pub graph: Arc<Mutex<rwlocked_graph::RwLockedGraph>>,
 }
 
 /// Graph-specific errors.

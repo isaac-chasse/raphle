@@ -45,7 +45,7 @@ async fn main() {
     );
     info!("Starting up!");
 
-    let graph = rwlocked_graph::RWLockedGraph::new(expected_node_count);
+    let graph = rwlocked_graph::RwLockedGraph::new(expected_node_count);
     let graph = Arc::new(Mutex::new(graph));
 
     let graph_clone = graph.clone();

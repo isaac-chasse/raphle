@@ -4,19 +4,19 @@ use roaring::bitmap::RoaringBitmap;
 use csv::ReaderBuilder;
 use tracing::info;
 
-pub struct RWLockedNodeMap {
+pub struct RwLockedNodeMap {
     outgoing_edges: RwLock<RoaringBitmap>,
     incoming_edges: RwLock<RoaringBitmap>,
 }
 
-pub struct RWLockedGraph {
-    nodes: RwLock<HashMap<u32, RWLockedNodeMap>>,
+pub struct RwLockedGraph {
+    nodes: RwLock<HashMap<u32, RwLockedNodeMap>>,
     pub is_loaded: RwLock<bool>,
 }
 
-impl RWLockedGraph {
+impl RwLockedGraph {
     pub fn new(expected_node_count: u32) -> Self {
-        RWLockedGraph {
+        RwLockedGraph {
             nodes: RwLock::new(HashMap::with_capacity(expected_node_count as usize)),
             is_loaded: RwLock::new(false),
         }
@@ -25,13 +25,13 @@ impl RWLockedGraph {
     /// Adds an edge between a given source and target node.
     pub fn add_edge(&self, source: u32, target: u32) {
         let mut nodes = self.nodes.write().unwrap();
-        let source_map = nodes.entry(source).or_insert_with(|| RWLockedNodeMap {
+        let source_map = nodes.entry(source).or_insert_with(|| RwLockedNodeMap {
             outgoing_edges: RwLock::new(RoaringBitmap::new()),
             incoming_edges: RwLock::new(RoaringBitmap::new()),
         });
         source_map.outgoing_edges.write().unwrap().insert(target);
 
-        let target_map = nodes.entry(target).or_insert_with(|| RWLockedNodeMap {
+        let target_map = nodes.entry(target).or_insert_with(|| RwLockedNodeMap {
             outgoing_edges: RwLock::new(RoaringBitmap::new()),
             incoming_edges: RwLock::new(RoaringBitmap::new()),
         });
@@ -117,25 +117,6 @@ impl RWLockedGraph {
             self.add_edge(source, target);
         }
 
-        // while rows.read_byte_record(&mut rec)? {
-        //     row_count += 1;
-        //
-        //     if row_count % 100_000 == 0 {
-        //         info!("Processed {} rows", row_count);
-        //     }
-        //
-        //     let source: u32 = std::str::from_utf8(rec.get(0).unwrap())
-        //         .unwrap()
-        //         .parse::<u32>()
-        //         .unwrap();
-        //     let target: u32 = std::str::from_utf8(rec.get(1).unwrap())
-        //         .unwrap()
-        //         .parse::<u32>()
-        //         .unwrap();
-        //
-        //     self.add_edge(source, target);
-        // }
-        
         *self.is_loaded.write().unwrap() = true;
         info!("Loaded graph with {} edges", row_count); // should be user count
 
