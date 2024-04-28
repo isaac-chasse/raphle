@@ -11,22 +11,23 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs: 
-  name: Test 
-  runs-on: ubuntu-latest 
+  test: 
+    name: Test 
+    runs-on: ubuntu-latest 
 
-  steps: 
+    steps: 
 
-  - name: Check out repository code 
-    uses: actions/checkout@v4 
+    - name: Check out repository code 
+      uses: actions/checkout@v4 
 
-  - name: Install the rust toolchain
-    uses: dtolnay/rust-toolchain@stable
+    - name: Install the rust toolchain
+      uses: dtolnay/rust-toolchain@stable
 
-  - name: Rust Cache Action 
-    uses: Swatinem/rust-cache@v2 
+    - name: Rust Cache Action 
+      uses: Swatinem/rust-cache@v2 
 
-  - name: Run tests 
-    run: cargo test 
+    - name: Run tests 
+      run: cargo test 
 
   fmt: 
     name: RustFmt
