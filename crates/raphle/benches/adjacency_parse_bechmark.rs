@@ -19,7 +19,7 @@ fn adjacency_parse_benchmark(c: &mut Criterion) {
         .parse::<u32>()
         .unwrap();
 
-    let graph = rwlocked_graph::RWLockedGraph::new(expected_node_count);
+    let graph = rwlocked_graph::RwLockedGraph::new(expected_node_count);
     let graph = Arc::new(Mutex::new(graph));
 
     let graph_clone = graph.clone();
