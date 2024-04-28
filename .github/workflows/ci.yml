@@ -10,44 +10,51 @@ on:
 env: 
   CARGO_TERM_COLOR: always
 
-jobs: 
-  name: Test 
-  runs-on: ubuntu-latest 
+jobs:
 
-  steps: 
-
-  - name: Check out repository code 
-    uses: actions/checkout@v3 
-
-  - name: Install the rust toolchain
-    uses: dtolnay/rust-toolchain@stable
-
-  - name: Rust Cache Action 
-    uses: Swatinem/rust-cache@v2 
-
-  - name: Run tests 
-    run: cargo test 
-
-  fmt: 
-    name: RustFmt
+  # Unique identifier for our job (`job_id`)
+  # The `test` container job
+  # Runs the cargo testing suite for errors
+  test:
+    # Sets name for the `Test` job that shows up in github CI
+    name: Test
+    # Containers must be run on linux based operating systems
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          # Specific to dtolnay/rust-toolchain: Comma-separated string of additional components to install
-          components: rustfmt
-      - name: Enforce formatting
-        run: cargo fmt --check
 
-  clippy:
-    name: Clippy
-    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      - uses: Swatinem/rust-cache@v2
-      - name: Linting
-        run: cargo clippy -- -D warnings
+
+    - name: Check out repository code 
+      uses: actions/checkout@v3 
+
+    - name: Install the rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Rust Cache Action 
+      uses: Swatinem/rust-cache@v2 
+
+    - name: Run tests 
+      run: cargo test 
+
+    fmt: 
+      name: RustFmt
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - uses: dtolnay/rust-toolchain@stable
+          with:
+            # Specific to dtolnay/rust-toolchain: Comma-separated string of additional components to install
+            components: rustfmt
+        - name: Enforce formatting
+          run: cargo fmt --check
+
+    clippy:
+      name: Clippy
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - uses: dtolnay/rust-toolchain@stable
+          with:
+            components: clippy
+        - uses: Swatinem/rust-cache@v2
+        - name: Linting
+          run: cargo clippy -- -D warnings
