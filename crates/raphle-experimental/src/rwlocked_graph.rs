@@ -4,6 +4,19 @@ use roaring::bitmap::RoaringBitmap;
 use csv::ReaderBuilder;
 use tracing::info;
 
+enum GraphAction {
+    AddEdge,
+    RemoveEdge,
+    // AddNode,
+    // RemoveNode,  // Part of a larger problem => How to update NodeMap?
+}
+
+struct QueueGraphActionItem {
+    action: GraphAction,
+    source: u32,
+    target: u32,  // How could we cascade targets? 
+}
+
 pub struct RwLockedNodeMap {
     outgoing_edges: RwLock<RoaringBitmap>,
     incoming_edges: RwLock<RoaringBitmap>,
@@ -11,15 +24,41 @@ pub struct RwLockedNodeMap {
 
 pub struct RwLockedGraph {
     nodes: RwLock<HashMap<u32, RwLockedNodeMap>>,
+    pending_action_queue: RwLock<Vec<QueueGraphActionItem>>,
     pub is_loaded: RwLock<bool>,
+
+    updated_nodes: RwLock<RoaringBitmap> // Think we should track all state changes for graph
+                                         // playback
 }
 
 impl RwLockedGraph {
     pub fn new(expected_node_count: u32) -> Self {
         RwLockedGraph {
             nodes: RwLock::new(HashMap::with_capacity(expected_node_count as usize)),
+            pending_action_queue: RwLock::new(Vec::new()),
             is_loaded: RwLock::new(false),
+            updated_nodes: RwLock::new(RoaringBitmap::new()),
         }
+    }
+
+    pub fn enqueue_add_edge(&self, source: u32, target: u32) {
+        self.pending_action_queue.write().unwrap().push(QueueGraphActionItem {
+            action: GraphAction::AddEdge,
+            source,
+            target,
+        });
+    }
+
+    pub fn enqueue_remove_edge(&self, source: u32, target: u32) {
+        self.pending_action_queue.write().unwrap().push(QueueGraphActionItem {
+            action: GraphAction::RemoveEdge,
+            source,
+            target,
+        });
+    }
+
+    pub fn pending_action_queue_len(&self) -> usize {
+        self.pending_action_queue.read().unwrap().len()
     }
 
     /// Adds an edge between a given source and target node.
@@ -36,6 +75,10 @@ impl RwLockedGraph {
             incoming_edges: RwLock::new(RoaringBitmap::new()),
         });
         target_map.incoming_edges.write().unwrap().insert(source);
+
+        // Add changes to updated_nodes so we can update on-disk version
+        self.updated_nodes.write().unwrap().insert(source);
+        self.updated_nodes.write().unwrap().insert(target);
     }
 
     /// Removes the edge between a given source and target node.
@@ -49,8 +92,9 @@ impl RwLockedGraph {
             target_map.incoming_edges.write().unwrap().remove(source);
         }
 
-        // TODO
-        // Create a bitmap for updated edges that can be written to disk asynchronously. 
+        // Add changes to updated_nodes so we can update on-disk version
+        self.updated_nodes.write().unwrap().insert(source);
+        self.updated_nodes.write().unwrap().insert(target);
     }
 
     /// Returns the incoming_edges for a target node.
@@ -79,6 +123,14 @@ impl RwLockedGraph {
     /// Checks that a node exists.
     pub fn get_node(&self, source: u32) -> Option<u32> {
         Some(source).filter(|&s| self.nodes.read().unwrap().contains_key(&s))
+    }
+
+}
+
+impl RwLockedGraph {
+    /// Flushes updated_nodes.
+    pub fn flush_updates(&self) {
+        todo!()
     }
 
     /// Loads from a TSV file given a path.
