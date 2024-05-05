@@ -51,7 +51,7 @@ pub async fn post_edges(
 
 /// Sends a new [`Edge`] to the [`GraphState`]. Will enqueue the edge to the [`GraphState`] if
 /// the graph is not fully loaded. Used to add new, single edges to the graph.
-pub async fn post_outgoing_edge(
+pub async fn post_edge(
     state: Extension<GraphState>,
     body: Json<Edge>,
 ) -> impl IntoResponse {

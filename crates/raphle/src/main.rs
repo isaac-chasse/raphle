@@ -1,4 +1,4 @@
-use axum::{routing::get, Extension, Router};
+use axum::{routing::{get, post}, Extension, Router};
 use axum_prometheus::{
     metrics_exporter_prometheus::{Matcher, PrometheusBuilder},
     PrometheusMetricLayer, AXUM_HTTP_REQUESTS_DURATION_SECONDS,
@@ -88,6 +88,8 @@ async fn main() {
     let server = Router::new()
         .route("/health", get(raphle_handlers::status::health))
         .route("/has_edge", get(raphle_handlers::action::get_has_edge))
+        .route("/edge", post(raphle_handlers::action::post_edge))
+        .route("/edges", post(raphle_handlers::action::post_edges))
         .route(
             "/outgoing",
             get(raphle_handlers::action::get_outgoing_edges),
