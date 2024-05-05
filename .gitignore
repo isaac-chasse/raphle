@@ -18,4 +18,5 @@ Cargo.lock
 
 # Don't commit large files from the data/benches/
 data/benches/*
+data/*.db*
 

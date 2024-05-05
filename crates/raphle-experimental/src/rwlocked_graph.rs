@@ -2,7 +2,21 @@ use std::{fs::File, io::BufReader, sync::RwLock};
 use hashbrown::HashMap;
 use roaring::bitmap::RoaringBitmap;
 use csv::ReaderBuilder;
-use tracing::info;
+use tracing::{info, error};
+use rusqlite::{Connection, Result};
+
+enum GraphAction {
+    AddEdge,
+    RemoveEdge,
+    // AddNode,
+    // RemoveNode,  // Part of a larger problem => How to update NodeMap?
+}
+
+struct QueueGraphActionItem {
+    action: GraphAction,
+    source: u32,
+    target: u32,  // How could we cascade targets? 
+}
 
 pub struct RwLockedNodeMap {
     outgoing_edges: RwLock<RoaringBitmap>,
@@ -11,15 +25,41 @@ pub struct RwLockedNodeMap {
 
 pub struct RwLockedGraph {
     nodes: RwLock<HashMap<u32, RwLockedNodeMap>>,
+    pending_action_queue: RwLock<Vec<QueueGraphActionItem>>,
     pub is_loaded: RwLock<bool>,
+
+    updated_nodes: RwLock<RoaringBitmap> // Think we should track all state changes for graph
+                                         // playback
 }
 
 impl RwLockedGraph {
     pub fn new(expected_node_count: u32) -> Self {
         RwLockedGraph {
             nodes: RwLock::new(HashMap::with_capacity(expected_node_count as usize)),
+            pending_action_queue: RwLock::new(Vec::new()),
             is_loaded: RwLock::new(false),
+            updated_nodes: RwLock::new(RoaringBitmap::new()),
         }
+    }
+
+    pub fn enqueue_add_edge(&self, source: u32, target: u32) {
+        self.pending_action_queue.write().unwrap().push(QueueGraphActionItem {
+            action: GraphAction::AddEdge,
+            source,
+            target,
+        });
+    }
+
+    pub fn enqueue_remove_edge(&self, source: u32, target: u32) {
+        self.pending_action_queue.write().unwrap().push(QueueGraphActionItem {
+            action: GraphAction::RemoveEdge,
+            source,
+            target,
+        });
+    }
+
+    pub fn pending_action_queue_len(&self) -> usize {
+        self.pending_action_queue.read().unwrap().len()
     }
 
     /// Adds an edge between a given source and target node.
@@ -36,6 +76,10 @@ impl RwLockedGraph {
             incoming_edges: RwLock::new(RoaringBitmap::new()),
         });
         target_map.incoming_edges.write().unwrap().insert(source);
+
+        // Add changes to updated_nodes so we can update on-disk version
+        self.updated_nodes.write().unwrap().insert(source);
+        self.updated_nodes.write().unwrap().insert(target);
     }
 
     /// Removes the edge between a given source and target node.
@@ -49,8 +93,9 @@ impl RwLockedGraph {
             target_map.incoming_edges.write().unwrap().remove(source);
         }
 
-        // TODO
-        // Create a bitmap for updated edges that can be written to disk asynchronously. 
+        // Add changes to updated_nodes so we can update on-disk version
+        self.updated_nodes.write().unwrap().insert(source);
+        self.updated_nodes.write().unwrap().insert(target);
     }
 
     /// Returns the incoming_edges for a target node.
@@ -79,6 +124,66 @@ impl RwLockedGraph {
     /// Checks that a node exists.
     pub fn get_node(&self, source: u32) -> Option<u32> {
         Some(source).filter(|&s| self.nodes.read().unwrap().contains_key(&s))
+    }
+
+}
+
+impl RwLockedGraph {
+    /// Flushes updated_nodes.
+    pub fn flush_updates(&self) -> Result<(), rusqlite::Error> {
+        let conn = Connection::open("data/raphle.db")?;
+        conn.pragma_update(None, "journal_mode", &"WAL")?;
+        conn.pragma_update(None, "synchronous", &"NORMAL")?;
+
+        match conn.execute(
+            "CREATE TABLE IF NOT EXISTS nodes (
+                nid INTEGER PRIMARY KEY,
+                outgoing BLOB NOT NULL,
+                incoming BLOB NOT NULL
+            )",
+            [],
+        ) {
+            Ok(_) => {}
+            Err(e) => {
+                error!("Error creating table: {:?}", e);
+           }
+        }
+
+        let mut stmt = conn.prepare(
+            "INSERT OR REPLACE INTO nodes (nid, outgoing, incoming) VALUES (?, ?, ?)",
+        )?;
+
+        let updated_nodes = self.updated_nodes.read().unwrap().clone();
+        let nodes = self.nodes.read().unwrap();
+
+        let mut num_updated = 0;
+        let total_updated = updated_nodes.len();
+
+        for nid in updated_nodes.iter() {
+            if num_updated % 100_000 == 0 {
+                info!("Updating node {}/{}", num_updated, total_updated);
+            }
+
+            let node = nodes.get(&nid).unwrap();
+            let outgoing = node.outgoing_edges.read().unwrap();
+            let incoming = node.incoming_edges.read().unwrap();
+            let mut outgoing_bytes = vec![];
+            let mut incoming_bytes = vec![];
+
+            outgoing.serialize_into(&mut outgoing_bytes).unwrap();
+            incoming.serialize_into(&mut incoming_bytes).unwrap();
+
+            match stmt.execute((nid, outgoing_bytes, incoming_bytes)) {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("Error inserting row: {:?}", e);
+                }
+            }
+            num_updated += 1;
+        }
+
+        self.updated_nodes.write().unwrap().clear();
+        Ok(())
     }
 
     /// Loads from a TSV file given a path.
