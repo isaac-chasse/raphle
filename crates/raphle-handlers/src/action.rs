@@ -23,14 +23,13 @@ pub async fn post_edges(
 ) -> impl IntoResponse {
     for new_edge in body.new_edges {
         // If the graph isn't loaded yet, enqueque the follow requests
-        if !state
+        if !*state
             .graph
             .lock()
             .unwrap()
             .is_loaded
             .read()
             .unwrap()
-            .clone()
         {
             state
                 .graph
@@ -57,14 +56,13 @@ pub async fn post_outgoing_edge(
     body: Json<Edge>,
 ) -> impl IntoResponse {
     // If the graph isn't loaded yet, enqueque the follow request
-    if !state
+    if !*state
         .graph
         .lock()
         .unwrap()
         .is_loaded
         .read()
         .unwrap()
-        .clone()
     {
         state
             .graph
