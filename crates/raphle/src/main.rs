@@ -101,6 +101,7 @@ async fn main() {
             "/incoming",
             get(raphle_handlers::action::get_incoming_edges),
         )
+        .route("/flush_updates", get(raphle_handlers::action::get_flush_updates))
         .layer(Extension(state))
         .route(
             "/metrics",
