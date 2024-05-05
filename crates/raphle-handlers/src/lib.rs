@@ -22,7 +22,7 @@ pub enum Errors {
     /// [`Errors::StillLoading`] occurs when requests are made to a graph that is still loading
     /// into memory.
     StillLoading,
-    
+
     /// [`Errors::CloggedFlush`] occurs when the graph fails to flush updates to the local database.
     CloggedFlush,
 }

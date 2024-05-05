@@ -23,14 +23,7 @@ pub async fn post_edges(
 ) -> impl IntoResponse {
     for new_edge in body.new_edges {
         // If the graph isn't loaded yet, enqueque the follow requests
-        if !*state
-            .graph
-            .lock()
-            .unwrap()
-            .is_loaded
-            .read()
-            .unwrap()
-        {
+        if !*state.graph.lock().unwrap().is_loaded.read().unwrap() {
             state
                 .graph
                 .lock()
@@ -52,19 +45,9 @@ pub async fn post_edges(
 
 /// Sends a new [`Edge`] to the [`GraphState`]. Will enqueue the edge to the [`GraphState`] if
 /// the graph is not fully loaded. Used to add new, single edges to the graph.
-pub async fn post_edge(
-    state: Extension<GraphState>,
-    body: Json<Edge>,
-) -> impl IntoResponse {
+pub async fn post_edge(state: Extension<GraphState>, body: Json<Edge>) -> impl IntoResponse {
     // If the graph isn't loaded yet, enqueque the follow request
-    if !*state
-        .graph
-        .lock()
-        .unwrap()
-        .is_loaded
-        .read()
-        .unwrap()
-    {
+    if !*state.graph.lock().unwrap().is_loaded.read().unwrap() {
         state
             .graph
             .lock()
@@ -209,7 +192,7 @@ pub async fn get_flush_updates(state: Extension<GraphState>) -> impl IntoRespons
     match state.graph.lock().unwrap().flush_updates() {
         Ok(_) => StatusCode::OK,
         Err(e) => {
-            // log this flush error 
+            // log this flush error
             error!("Failed to flush updates: {:?}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         }

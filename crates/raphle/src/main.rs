@@ -1,4 +1,7 @@
-use axum::{routing::{get, post}, Extension, Router};
+use axum::{
+    routing::{get, post},
+    Extension, Router,
+};
 use axum_prometheus::{
     metrics_exporter_prometheus::{Matcher, PrometheusBuilder},
     PrometheusMetricLayer, AXUM_HTTP_REQUESTS_DURATION_SECONDS,
