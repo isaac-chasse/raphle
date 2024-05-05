@@ -36,6 +36,7 @@ pub async fn post_edges(
                 .lock()
                 .unwrap()
                 .enqueue_add_edge(new_edge.source, new_edge.target);
+            warn!("graph not fully loaded, added edge to queue");
             continue;
         }
 
@@ -45,7 +46,7 @@ pub async fn post_edges(
             .unwrap()
             .add_edge(new_edge.source, new_edge.target)
     }
-
+    info!("successfully loaded edges");
     StatusCode::OK
 }
 
@@ -69,6 +70,7 @@ pub async fn post_edge(
             .lock()
             .unwrap()
             .enqueue_add_edge(body.source, body.target);
+        warn!("graph not loaded, added edge to queue");
         return StatusCode::OK;
     }
 
@@ -77,6 +79,7 @@ pub async fn post_edge(
         .lock()
         .unwrap()
         .add_edge(body.source, body.target);
+    info!("successfully added edge");
     StatusCode::OK
 }
 
@@ -99,7 +102,7 @@ pub async fn get_outgoing_edges(
 ) -> Result<Json<OutgoingEdgeResponse>, Errors> {
     // Return Error if not loaded
     if !*state.graph.lock().unwrap().is_loaded.read().unwrap() {
-        error!("Graph data not yet loaded!");
+        error!("graph data not yet loaded!");
         return Err(Errors::StillLoading);
     }
 
