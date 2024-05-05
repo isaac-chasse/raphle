@@ -205,7 +205,13 @@ pub async fn get_has_edge(
     Ok(Json(HasEdgeResponse { has_edge }))
 }
 
-// #[derive(Deserialize)]
-// pub struct RemoveEdge {
-//     todo!(),
-// }
+pub async fn get_flush_updates(state: Extension<GraphState>) -> impl IntoResponse {
+    match state.graph.lock().unwrap().flush_updates() {
+        Ok(_) => StatusCode::OK,
+        Err(e) => {
+            // log this flush error 
+            error!("Failed to flush updates: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
+    }
+}

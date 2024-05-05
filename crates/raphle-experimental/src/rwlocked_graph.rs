@@ -130,7 +130,7 @@ impl RwLockedGraph {
 
 impl RwLockedGraph {
     /// Flushes updated_nodes.
-    pub fn flush_updates(&self) -> Result<(), rusqlite::Error> {
+    pub fn flush_updates(&self) -> Result<(), Errors::CloggedFlush> {
         let conn = Connection::open("data/raphle.db")?;
         conn.pragma_update(None, "journal_mode", &"WAL")?;
         conn.pragma_update(None, "synchronous", &"NORMAL")?;
