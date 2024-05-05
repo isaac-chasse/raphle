@@ -1,4 +1,4 @@
-use axum::{extract::Query, Extension, Json, response::IntoResponse, http::StatusCode};
+use axum::{extract::Query, http::StatusCode, response::IntoResponse, Extension, Json};
 use serde::{Deserialize, Serialize};
 use tracing::{error, info, warn};
 
@@ -23,30 +23,62 @@ pub async fn post_edges(
 ) -> impl IntoResponse {
     for new_edge in body.new_edges {
         // If the graph isn't loaded yet, enqueque the follow requests
-        if !state.graph.lock().unwrap().is_loaded.read().unwrap().clone() {
-            state.graph.lock().unwrap().enqueue_add_edge(new_edge.source, new_edge.target);
+        if !state
+            .graph
+            .lock()
+            .unwrap()
+            .is_loaded
+            .read()
+            .unwrap()
+            .clone()
+        {
+            state
+                .graph
+                .lock()
+                .unwrap()
+                .enqueue_add_edge(new_edge.source, new_edge.target);
             continue;
         }
 
-        state.graph.lock().unwrap().add_edge(new_edge.source, new_edge.target)
+        state
+            .graph
+            .lock()
+            .unwrap()
+            .add_edge(new_edge.source, new_edge.target)
     }
 
     StatusCode::OK
 }
 
 /// Sends a new [`Edge`] to the [`GraphState`]. Will enqueue the edge to the [`GraphState`] if
-/// the graph is not fully loaded. Used to add new, single edges to the graph. 
+/// the graph is not fully loaded. Used to add new, single edges to the graph.
 pub async fn post_outgoing_edge(
     state: Extension<GraphState>,
     body: Json<Edge>,
 ) -> impl IntoResponse {
-    // If the graph isn't loaded yet, enqueque the follow request 
-    if !state.graph.lock().unwrap().is_loaded.read().unwrap().clone() {
-        state.graph.lock().unwrap().enqueue_add_edge(body.source, body.target);
+    // If the graph isn't loaded yet, enqueque the follow request
+    if !state
+        .graph
+        .lock()
+        .unwrap()
+        .is_loaded
+        .read()
+        .unwrap()
+        .clone()
+    {
+        state
+            .graph
+            .lock()
+            .unwrap()
+            .enqueue_add_edge(body.source, body.target);
         return StatusCode::OK;
     }
 
-    state.graph.lock().unwrap().add_edge(body.source, body.target);
+    state
+        .graph
+        .lock()
+        .unwrap()
+        .add_edge(body.source, body.target);
     StatusCode::OK
 }
 
