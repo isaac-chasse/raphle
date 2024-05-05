@@ -2,7 +2,8 @@ use std::{fs::File, io::BufReader, sync::RwLock};
 use hashbrown::HashMap;
 use roaring::bitmap::RoaringBitmap;
 use csv::ReaderBuilder;
-use tracing::info;
+use tracing::{info, error};
+use rusqlite::{Connection, Result};
 
 enum GraphAction {
     AddEdge,
@@ -129,8 +130,60 @@ impl RwLockedGraph {
 
 impl RwLockedGraph {
     /// Flushes updated_nodes.
-    pub fn flush_updates(&self) {
-        todo!()
+    pub fn flush_updates(&self) -> Result<(), rusqlite::Error> {
+        let conn = Connection::open("data/raphle.db")?;
+        conn.pragma_update(None, "journal_mode", &"WAL")?;
+        conn.pragma_update(None, "synchronous", &"NORMAL")?;
+
+        match conn.execute(
+            "CREATE TABLE IF NOT EXISTS nodes (
+                nid INTEGER PRIMARY KEY,
+                outgoing BLOB NOT NULL,
+                incoming BLOB NOT NULL
+            )",
+            [],
+        ) {
+            Ok(_) => {}
+            Err(e) => {
+                error!("Error creating table: {:?}", e);
+           }
+        }
+
+        let mut stmt = conn.prepare(
+            "INSERT OR REPLACE INTO nodes (nid, outgoing, incoming) VALUES (?, ?, ?)",
+        )?;
+
+        let updated_nodes = self.updated_nodes.read().unwrap().clone();
+        let nodes = self.nodes.read().unwrap();
+
+        let mut num_updated = 0;
+        let total_updated = updated_nodes.len();
+
+        for nid in updated_nodes.iter() {
+            if num_updated % 100_000 == 0 {
+                info!("Updating node {}/{}", num_updated, total_updated);
+            }
+
+            let node = nodes.get(&nid).unwrap();
+            let outgoing = node.outgoing_edges.read().unwrap();
+            let incoming = node.incoming_edges.read().unwrap();
+            let mut outgoing_bytes = vec![];
+            let mut incoming_bytes = vec![];
+
+            outgoing.serialize_into(&mut outgoing_bytes).unwrap();
+            incoming.serialize_into(&mut incoming_bytes).unwrap();
+
+            match stmt.execute((nid, outgoing_bytes, incoming_bytes)) {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("Error inserting row: {:?}", e);
+                }
+            }
+            num_updated += 1;
+        }
+
+        self.updated_nodes.write().unwrap().clear();
+        Ok(())
     }
 
     /// Loads from a TSV file given a path.
